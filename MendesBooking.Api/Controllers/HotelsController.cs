@@ -1,89 +1,95 @@
-﻿using Booking_Domain.Models;
+﻿using Booking_Date;
+using Booking_Domain.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace MendesBooking.Api.Controllers
 {
 
-    //CRUD
-    //Create
-    //Read - get all, get by id
-    //Update
-    //Delete
-    // /hotels
+
     [ApiController]
     [Route("api/[controller]")]
     public class HotelsController : Controller
     {
         // injeção de depetencia
         // propriedade 
-        private readonly DataSource _dataSource;
-        
+        private readonly ILogger<HotelsController> _logger;
+        private readonly HttpContext _http;
+        private readonly DataContext _ctx;
+
+
         //construtor. 
-        public HotelsController(DataSource dataSource)
+       public HotelsController(ILogger<HotelsController> logger, 
+           //IHttpContextAccessor httpContextAccessor, 
+           DataContext ctx)
         {
-            _dataSource = dataSource;
+            _logger = logger;
+            //_http = httpContextAccessor.HttpContext;
+            _ctx = ctx;
+
         }
 
         [HttpGet]
-        public IActionResult GetAllHotels()
+        public async Task<IActionResult> GetAllHotels()
         {
-            var hotels = _dataSource.Hotels;
+            var hotels = await _ctx.Hotels.ToListAsync();
             return Ok(hotels);
         }
 
 
         [Route("{id}")]
         [HttpGet]
-        public IActionResult GetHotelById(int id)
+        public async Task<IActionResult> GetHotelById(int id)
         {
-            var hotels = _dataSource.Hotels;
-            var hotel = hotels.FirstOrDefault(h => h.HotelId == id);
-
-            if (hotel == null)
-                return NotFound();
-
+            var hotel = await _ctx.Hotels.FirstOrDefaultAsync(h => h.HotelId == id);
             return Ok(hotel);
         }
 
         [HttpPost]
-        public IActionResult CreateHotel([FromBody] Hotel hotel)
+        public async Task<IActionResult> CreateHotel([FromBody] Hotel hotel)
         {
-            var hotels = _dataSource.Hotels;
-            hotels.Add(hotel);
+            await _ctx.Hotels.AddAsync(hotel);
+            try
+            {
+                var teste = await _ctx.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+
+            }
+
             return CreatedAtAction(nameof(GetHotelById), new { id = hotel.HotelId }, hotel);
         }
 
         [HttpPut]
         [Route("{id}")]
-        public IActionResult UpdateHotel([FromBody] Hotel updated, int id)
+        public async Task<IActionResult> UpdateHotel([FromBody] Hotel updated, int id)
         {
-            var hotels = _dataSource.Hotels;
-            var old = hotels.FirstOrDefault(h => h.HotelId == id);
+            var hotel = await _ctx.Hotels.FirstOrDefaultAsync(h => h.HotelId == id);
+            hotel.Stars = updated.Stars;
+            hotel.Description = updated.Description;
+            hotel.Name = updated.Name;
 
-            if (old == null)
-                return NotFound("No resource with the corresponding ID found");
+            _ctx.Hotels.Update(hotel);
+            await _ctx.SaveChangesAsync();
 
-            hotels.Remove(old);
-            hotels.Add(updated);
             return NoContent();
         }
 
         [HttpDelete]
         [Route("{id}")]
-        public IActionResult DeleteHotel(int id)
+        public async Task<IActionResult> DeleteHotel(int id)
         {
-            var hotels = _dataSource.Hotels;
-            var toDelete = hotels.FirstOrDefault(h => h.HotelId == id);
+            var hotel = await _ctx.Hotels.FirstOrDefaultAsync(h => h.HotelId == id);
+            _ctx.Hotels.Remove(hotel);
+            await _ctx.SaveChangesAsync();
 
-            if (toDelete == null)
-                return NotFound("No resource found with the provided ID");
-
-            hotels.Remove(toDelete);
             return NoContent();
         }
+
     }
 }
