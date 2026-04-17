@@ -30,12 +30,13 @@ namespace mendesBooking.Api
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "CwkBooking.Api", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "mendesBooking.Api", Version = "v1" });
             });
             services.AddHttpContextAccessor();
 
             var cs = Configuration.GetConnectionString("Default");
             services.AddDbContext<DataContext>(options => options.UseSqlServer(cs));
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
         }
 
@@ -46,7 +47,7 @@ namespace mendesBooking.Api
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CwkBooking.Api v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "mendesBooking.Api v1"));
             }
 
             app.UseHttpsRedirection();
@@ -55,7 +56,7 @@ namespace mendesBooking.Api
 
             app.UseAuthorization();
 
-            app.UseDateTimeHeader();
+            //app.UseDateTimeHeader();
 
             app.UseEndpoints(endpoints =>
             {

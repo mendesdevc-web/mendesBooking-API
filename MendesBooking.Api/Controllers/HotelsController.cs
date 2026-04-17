@@ -1,11 +1,16 @@
-﻿using Booking_Date;
+﻿using AutoMapper;
+using Booking_Date;
 using Booking_Domain.Models;
+using MendesBooking.Api.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace MendesBooking.Api.Controllers
 {
@@ -16,28 +21,20 @@ namespace MendesBooking.Api.Controllers
     public class HotelsController : Controller
     {
         // injeção de depetencia
-        // propriedade 
-        private readonly ILogger<HotelsController> _logger;
-        private readonly HttpContext _http;
+        private readonly IMapper _mapper;                           // propriedade
         private readonly DataContext _ctx;
-
-
-        //construtor. 
-       public HotelsController(ILogger<HotelsController> logger, 
-           //IHttpContextAccessor httpContextAccessor, 
-           DataContext ctx)
+        public HotelsController(IMapper mapper, DataContext ctx)   //construtor. 
         {
-            _logger = logger;
-            //_http = httpContextAccessor.HttpContext;
             _ctx = ctx;
-
+            _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllHotels()
         {
             var hotels = await _ctx.Hotels.ToListAsync();
-            return Ok(hotels);
+            var hotelsGet = _mapper.Map<List<HotelGetDto>>(hotels);
+            return Ok(hotelsGet);
         }
 
 
@@ -46,35 +43,35 @@ namespace MendesBooking.Api.Controllers
         public async Task<IActionResult> GetHotelById(int id)
         {
             var hotel = await _ctx.Hotels.FirstOrDefaultAsync(h => h.HotelId == id);
-            return Ok(hotel);
+
+            if (hotel == null)
+                return NotFound();
+
+            var hotelGet = _mapper.Map<HotelGetDto>(hotel);
+            return Ok(hotelGet);
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateHotel([FromBody] Hotel hotel)
+        public async Task<IActionResult> CreateHotel([FromBody] HotelCreateDto hotel)
         {
-            await _ctx.Hotels.AddAsync(hotel);
-            try
-            {
-                var teste = await _ctx.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
+            var domainHotel = _mapper.Map<Hotel>(hotel);
 
-            }
+            _ctx.Hotels.Add(domainHotel);
+            await _ctx.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetHotelById), new { id = hotel.HotelId }, hotel);
+            var hotelGet = _mapper.Map<HotelGetDto>(domainHotel);
+
+            return CreatedAtAction(nameof(GetHotelById), new { id = domainHotel.HotelId }, hotelGet);
         }
 
         [HttpPut]
         [Route("{id}")]
-        public async Task<IActionResult> UpdateHotel([FromBody] Hotel updated, int id)
+        public async Task<IActionResult> UpdateHotel([FromBody] HotelCreateDto updated, int id)
         {
-            var hotel = await _ctx.Hotels.FirstOrDefaultAsync(h => h.HotelId == id);
-            hotel.Stars = updated.Stars;
-            hotel.Description = updated.Description;
-            hotel.Name = updated.Name;
+            var toUpadate = _mapper.Map<Hotel>(updated);
+            toUpadate.HotelId = id;
 
-            _ctx.Hotels.Update(hotel);
+            _ctx.Hotels.Update(toUpadate);
             await _ctx.SaveChangesAsync();
 
             return NoContent();
@@ -85,11 +82,89 @@ namespace MendesBooking.Api.Controllers
         public async Task<IActionResult> DeleteHotel(int id)
         {
             var hotel = await _ctx.Hotels.FirstOrDefaultAsync(h => h.HotelId == id);
+
+            if (hotel == null)
+                return NotFound();
+
             _ctx.Hotels.Remove(hotel);
             await _ctx.SaveChangesAsync();
 
             return NoContent();
         }
 
+        [HttpGet]
+        [Route("{hotelId}/rooms")]
+        public async Task<IActionResult> GetAllHotelRooms(int hotelId)
+        {
+            var rooms = await _ctx.Rooms.Where(r => r.HotelId == hotelId).ToListAsync();
+            var mappedRooms = _mapper.Map<List<RoomGetDto>>(rooms);
+
+            return Ok(mappedRooms);
+        }
+
+        [HttpGet]
+        [Route("{hotelId}/rooms/{roomId}")]
+        public async Task<IActionResult> GetHotelRoomById(int hotelId, int roomId)
+        {
+            var room = await _ctx.Rooms.FirstOrDefaultAsync(r => r.HotelId == hotelId && r.RoomId == roomId);
+            if (room == null)
+                return NotFound("Room not founf");
+
+            var mappedRoom = _mapper.Map<RoomGetDto>(room);
+
+            return Ok(mappedRoom);
+        }
+
+        [HttpPost]
+        [Route("{hotelId}/rooms")]
+        public async Task<IActionResult> AddHotelRoom(int hotelId, [FromBody] RoomPostPutDto newRoom)
+        {
+            var room = _mapper.Map<Room>(newRoom);
+            //room.HotelId = hotelId;
+
+            //_ctx.Rooms.Add(room);
+            //await _ctx.SaveChangesAsync();
+
+            var hotel = await _ctx.Hotels.Include(h => h.Rooms).FirstOrDefaultAsync(h => h.HotelId == hotelId);
+
+            hotel.Rooms.Add(room);
+
+            await _ctx.SaveChangesAsync();
+
+            var mappedRoom = _mapper.Map<RoomGetDto>(room);
+
+            return CreatedAtAction(nameof(GetHotelRoomById),
+                new { hotelId = hotelId, roomId = mappedRoom.RoomId }, mappedRoom);
+        }
+
+        [HttpPut]
+        [Route("{hotelId}/rooms/{roomId}")]
+        public async Task<IActionResult> UpdateHotelRoom(int hotelId, int roomId,
+            [FromBody] RoomPostPutDto updatedRoom)
+        {
+            var toUpdate = _mapper.Map<Room>(updatedRoom);
+            toUpdate.RoomId = roomId;
+            toUpdate.HotelId = hotelId;
+
+            _ctx.Rooms.Update(toUpdate);
+            await _ctx.SaveChangesAsync();
+
+            return NoContent();
+        }
+        
+        [HttpDelete]
+        [Route("{hotelId}/rooms/{roomId}")]
+        public async Task<IActionResult> RemoveRoomFromHotel(int hotelId, int roomId)
+        {
+            var room = await _ctx.Rooms.SingleOrDefaultAsync(r => r.RoomId == roomId && r.HotelId == hotelId);
+
+            if (room == null)
+                return NotFound("Room not found");
+
+            _ctx.Rooms.Remove(room);
+            await _ctx.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
