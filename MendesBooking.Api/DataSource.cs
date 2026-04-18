@@ -1,10 +1,10 @@
-﻿using Booking_Domain.Models;
+﻿using Booking.Domain.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MendesBooking.Api
+namespace Booking.Api
 {
     public class DataSource
     {

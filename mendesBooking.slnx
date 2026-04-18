@@ -1,6 +1,6 @@
 <Solution>
-  <Project Path="Booking-Date/Booking-Data.csproj" />
-  <Project Path="Booking-Domain/Booking-Domain.csproj" />
-  <Project Path="Booking-Services/Booking-Services.csproj" />
+  <Project Path="Booking-Date/Booking.Data.csproj" />
+  <Project Path="Booking-Domain/Booking.Domain.csproj" />
+  <Project Path="Booking-Services/Booking.Services.csproj" />
   <Project Path="MendesBooking.Api/MendesBooking.Api.csproj" />
 </Solution>

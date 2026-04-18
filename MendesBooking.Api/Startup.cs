@@ -1,18 +1,18 @@
-using Booking_Date;
-using MendesBooking.Api.Middleware;
+using Booking.Data;
+using Booking.Dal;
+using Booking.Dal.Repositories;
+using Booking.Domain.Abstractions.Repositories;
+using Booking.Domain.Abstractions.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using System;
+using Booking.Services.Services;
 
-namespace mendesBooking.Api
+namespace Booking.Api
 {
     public class Startup
     {
@@ -30,13 +30,15 @@ namespace mendesBooking.Api
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "mendesBooking.Api", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "CwkBooking.Api", Version = "v1" });
             });
             services.AddHttpContextAccessor();
 
             var cs = Configuration.GetConnectionString("Default");
             services.AddDbContext<DataContext>(options => options.UseSqlServer(cs));
-            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+            services.AddAutoMapper(typeof(Startup));
+            services.AddScoped<IHotelsRepository, HotelRepository>();
+            services.AddScoped<IReservationService, ReservationService>();
 
         }
 
@@ -47,7 +49,7 @@ namespace mendesBooking.Api
             {
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "mendesBooking.Api v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "CwkBooking.Api v1"));
             }
 
             app.UseHttpsRedirection();

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Booking_Date.Migrations
+namespace Booking.Data.Migrations
 {
     public partial class Teste01 : Migration
     {

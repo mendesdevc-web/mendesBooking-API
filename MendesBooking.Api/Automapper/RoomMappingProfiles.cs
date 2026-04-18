@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
-using Booking_Domain.Models;
-using MendesBooking.Api.Dtos;
-using System;
+using Booking.Api.Dtos;
+using Booking.Domain.Models;
 
-namespace MendesBooking.Api.Automapper
+namespace Booking.Api.Automapper
 {
     public class RoomMappingProfiles : Profile
     {

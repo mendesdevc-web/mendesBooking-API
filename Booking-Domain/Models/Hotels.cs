@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Booking.Domain.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Booking_Domain.Models
+namespace Booking.Domain.Models
 {
     public class Hotel
     {

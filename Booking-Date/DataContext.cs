@@ -1,7 +1,7 @@
-﻿using Booking_Domain.Models;
+﻿using Booking.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Booking_Date
+namespace Booking.Data
 {
     public class DataContext : DbContext
     {
